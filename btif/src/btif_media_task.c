@@ -168,8 +168,7 @@ enum {
 
 
 /* buffer pool */
-#define BTIF_MEDIA_AA_POOL_ID GKI_POOL_ID_3
-#define BTIF_MEDIA_AA_BUF_SIZE GKI_BUF3_SIZE
+#define BTIF_MEDIA_AA_BUF_SIZE  BT_DEFAULT_BUFFER_SIZE
 
 /* offset */
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
@@ -2493,6 +2492,11 @@ static void btif_media_task_aa_start_tx(void)
     APPL_TRACE_IMP("btif_media_task_aa_start_tx is timer %d, feeding mode %d",
              btif_media_cb.is_tx_timer, btif_media_cb.feeding_mode);
 
+    if (btif_media_cb.is_tx_timer) {
+      LOG_WARN(LOG_TAG, "%s media alarm already running", __func__);
+      return;
+    }
+
     /* Use a timer to poll the UIPC, get rid of the UIPC call back */
     // UIPC_Ioctl(UIPC_CH_ID_AV_AUDIO, UIPC_REG_CBACK, NULL);
 
@@ -2514,8 +2518,13 @@ static void btif_media_task_aa_start_tx(void)
       return;
     }
 
+<<<<<<< HEAD
     alarm_set_periodic(btif_media_cb.media_alarm, BTIF_MEDIA_TIME_TICK, btif_media_task_alarm_cb, NULL);
 #endif
+=======
+    alarm_set_periodic(btif_media_cb.media_alarm, BTIF_MEDIA_TIME_TICK,
+                       btif_media_task_alarm_cb, NULL);
+>>>>>>> 0a016b2e4980c79a650d869f93189bb014f4d3c2
 }
 
 /*******************************************************************************
@@ -3070,7 +3079,8 @@ static void btif_media_aa_prep_sbc_2_send(UINT8 nb_frame)
 #endif
     while (nb_frame)
     {
-        if (NULL == (p_buf = GKI_getpoolbuf(BTIF_MEDIA_AA_POOL_ID)))
+        p_buf = GKI_getbuf(BTIF_MEDIA_AA_BUF_SIZE);
+        if (p_buf == NULL)
         {
             APPL_TRACE_ERROR ("ERROR btif_media_aa_prep_sbc_2_send no buffer TxCnt %d ",
                                 GKI_queue_length(&btif_media_cb.TxAaQ));

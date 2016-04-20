@@ -833,10 +833,6 @@ static bt_status_t init( bthf_callbacks_t* callbacks, int max_hf_clients)
     bt_hf_callbacks = callbacks;
     memset(&btif_hf_cb, 0, sizeof(btif_hf_cb));
 
-    memset(&btif_hf_cb, 0, sizeof(btif_hf_cb));
-    btif_max_hf_clients = max_hf_clients;
-    BTIF_TRACE_DEBUG("btif_max_hf_clients = %d", btif_max_hf_clients);
-
     /* Invoke the enable service API to the core to set the appropriate service_id
      * Internally, the HSP_SERVICE_ID shall also be enabled if HFP is enabled (phone)
      * othwerwise only HSP is enabled (tablet)
@@ -1162,7 +1158,7 @@ static bt_status_t cops_response(const char *cops, bt_bdaddr_t *bd_addr)
         tBTA_AG_RES_DATA    ag_res;
 
         /* Format the response */
-        sprintf (ag_res.str, "0,0,\"%s\"", cops);
+        sprintf (ag_res.str, "0,0,\"%.16s\"", cops);
         ag_res.ok_flag = BTA_AG_OK_DONE;
 
         BTA_AgResult (btif_hf_cb[idx].handle, BTA_AG_COPS_RES, &ag_res);

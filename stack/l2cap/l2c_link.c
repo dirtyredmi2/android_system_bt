@@ -998,9 +998,9 @@ void l2c_link_adjust_allocation (void)
 *******************************************************************************/
 void l2c_link_adjust_chnl_allocation (void)
 {
-    tL2C_CCB    *p_ccb;
     UINT8       xx;
 
+<<<<<<< HEAD
     UINT16      weighted_chnls[GKI_NUM_TOTAL_BUF_POOLS];
     UINT16      quota_per_weighted_chnls[GKI_NUM_TOTAL_BUF_POOLS];
     UINT16      reserved_buff[GKI_NUM_TOTAL_BUF_POOLS];
@@ -1074,11 +1074,14 @@ void l2c_link_adjust_chnl_allocation (void)
             quota_per_weighted_chnls[xx] = 0;
     }
 
+=======
+    L2CAP_TRACE_DEBUG("%s", __func__);
+>>>>>>> 0a016b2e4980c79a650d869f93189bb014f4d3c2
 
     /* assign buffer quota to each channel based on its data rate requirement */
     for (xx = 0; xx < MAX_L2CAP_CHANNELS; xx++)
     {
-        p_ccb = l2cb.ccb_pool + xx;
+        tL2C_CCB *p_ccb = l2cb.ccb_pool + xx;
 
         if (!p_ccb->in_use)
             continue;
@@ -1087,6 +1090,7 @@ void l2c_link_adjust_chnl_allocation (void)
         {
             p_ccb->buff_quota = quota_per_weighted_chnls[HCI_LE_ACL_POOL_ID] * p_ccb->tx_data_rate;
 
+<<<<<<< HEAD
             L2CAP_TRACE_EVENT ("LE-L2CAP: CID:0x%04x LE TxPool:%u Priority:%u TxDataRate:%u Quota:%u",
                                 p_ccb->local_cid, HCI_LE_ACL_POOL_ID, p_ccb->ccb_priority,
                                 p_ccb->tx_data_rate, p_ccb->buff_quota);
@@ -1110,9 +1114,17 @@ void l2c_link_adjust_chnl_allocation (void)
                                 p_ccb->local_cid,
                                 p_ccb->ccb_priority, p_ccb->tx_data_rate, p_ccb->buff_quota);
         }
+=======
+        tL2CAP_CHNL_DATA_RATE data_rate = p_ccb->tx_data_rate + p_ccb->rx_data_rate;
+        p_ccb->buff_quota = L2CAP_CBB_DEFAULT_DATA_RATE_BUFF_QUOTA * data_rate;
+        L2CAP_TRACE_EVENT("CID:0x%04x FCR Mode:%u Priority:%u TxDataRate:%u RxDataRate:%u Quota:%u",
+                          p_ccb->local_cid, p_ccb->peer_cfg.fcr.mode,
+                          p_ccb->ccb_priority, p_ccb->tx_data_rate,
+                          p_ccb->rx_data_rate, p_ccb->buff_quota);
+>>>>>>> 0a016b2e4980c79a650d869f93189bb014f4d3c2
 
         /* quota may be change so check congestion */
-        l2cu_check_channel_congestion (p_ccb);
+        l2cu_check_channel_congestion(p_ccb);
     }
 }
 

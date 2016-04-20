@@ -24,8 +24,13 @@ extern "C" {
 
 TEST(InteropTest, test_lookup_hit) {
   bt_bdaddr_t test_address;
+<<<<<<< HEAD
   string_to_bdaddr("38:2c:4a:59:67:89", &test_address);
   EXPECT_TRUE(interop_addr_match(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
+=======
+  string_to_bdaddr("38:2c:4a:e6:67:89", &test_address);
+  EXPECT_TRUE(interop_match(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
+>>>>>>> 0a016b2e4980c79a650d869f93189bb014f4d3c2
   string_to_bdaddr("9c:df:03:12:34:56", &test_address);
   EXPECT_TRUE(interop_addr_match(INTEROP_AUTO_RETRY_PAIRING, &test_address));
 }
@@ -42,3 +47,23 @@ TEST(InteropTest, test_lookup_miss) {
   EXPECT_FALSE(interop_addr_match(INTEROP_AUTO_RETRY_PAIRING, &test_address));
 }
 
+TEST(InteropTest, test_dynamic) {
+  bt_bdaddr_t test_address;
+
+  string_to_bdaddr("11:22:33:44:55:66", &test_address);
+  EXPECT_FALSE(interop_match(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
+
+  interop_database_add(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address, 3);
+  EXPECT_TRUE(interop_match(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
+  EXPECT_FALSE(interop_match(INTEROP_AUTO_RETRY_PAIRING, &test_address));
+
+  string_to_bdaddr("66:55:44:33:22:11", &test_address);
+  EXPECT_FALSE(interop_match(INTEROP_AUTO_RETRY_PAIRING, &test_address));
+
+  interop_database_add(INTEROP_AUTO_RETRY_PAIRING, &test_address, 3);
+  EXPECT_TRUE(interop_match(INTEROP_AUTO_RETRY_PAIRING, &test_address));
+  EXPECT_FALSE(interop_match(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
+
+  interop_database_clear();
+  EXPECT_FALSE(interop_match(INTEROP_AUTO_RETRY_PAIRING, &test_address));
+}

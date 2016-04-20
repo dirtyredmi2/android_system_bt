@@ -502,7 +502,8 @@ static void process_service_search (tCONN_CB *p_ccb, UINT16 trans_num,
     }
 
     /* Get a buffer to use to build the response */
-    if ((p_buf = (BT_HDR *)GKI_getpoolbuf (SDP_POOL_ID)) == NULL)
+    p_buf = (BT_HDR *)GKI_getbuf(SDP_DATA_BUF_SIZE);
+    if (p_buf == NULL)
     {
         SDP_TRACE_ERROR ("SDP - no buf for search rsp");
         return;
@@ -830,7 +831,8 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     }
 
     /* Get a buffer to use to build the response */
-    if ((p_buf = (BT_HDR *)GKI_getpoolbuf (SDP_POOL_ID)) == NULL)
+    p_buf = (BT_HDR *)GKI_getbuf(SDP_DATA_BUF_SIZE);
+    if (p_buf == NULL)
     {
         SDP_TRACE_ERROR ("SDP - no buf for search rsp");
         return;
@@ -1234,7 +1236,8 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     }
 
     /* Get a buffer to use to build the response */
-    if ((p_buf = (BT_HDR *)GKI_getpoolbuf (SDP_POOL_ID)) == NULL)
+    p_buf = (BT_HDR *)GKI_getbuf(SDP_DATA_BUF_SIZE);
+    if (p_buf == NULL)
     {
         SDP_TRACE_ERROR ("SDP - no buf for search rsp");
         return;

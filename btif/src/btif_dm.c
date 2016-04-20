@@ -239,7 +239,7 @@ static void btif_dm_data_copy(uint16_t event, char *dst, char *src)
         return;
 
     assert(dst_dm_sec);
-    memcpy(dst_dm_sec, src_dm_sec, sizeof(tBTA_DM_SEC));
+    maybe_non_aligned_memcpy(dst_dm_sec, src_dm_sec, sizeof(*src_dm_sec));
 
     if (event == BTA_DM_BLE_KEY_EVT)
     {
@@ -881,7 +881,7 @@ static void search_devices_copy_cb(UINT16 event, char *p_dest, char *p_src)
         return;
 
     BTIF_TRACE_DEBUG("%s: event=%s", __FUNCTION__, dump_dm_search_event(event));
-    memcpy(p_dest_data, p_src_data, sizeof(tBTA_DM_SEARCH));
+    maybe_non_aligned_memcpy(p_dest_data, p_src_data, sizeof(*p_src_data));
     switch (event)
     {
         case BTA_DM_INQ_RES_EVT:
@@ -914,7 +914,7 @@ static void search_services_copy_cb(UINT16 event, char *p_dest, char *p_src)
 
     if (!p_src)
         return;
-    memcpy(p_dest_data, p_src_data, sizeof(tBTA_DM_SEARCH));
+    maybe_non_aligned_memcpy(p_dest_data, p_src_data, sizeof(*p_src_data));
     switch (event)
     {
          case BTA_DM_DISC_RES_EVT:
@@ -1213,6 +1213,16 @@ static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
                 return;
             }
         }
+    }
+
+    // We could have received a new link key without going through the pairing flow.
+    // If so, we don't want to perform SDP or any other operations on the authenticated
+    // device.
+    if (!bdaddr_equals(p_auth_cmpl->bd_addr, pairing_cb.bd_addr)) {
+      char address[32];
+      bdaddr_to_string(&p_auth_cmpl->bd_addr, address, sizeof(address));
+      LOG_INFO("%s skipping SDP since we did not initiate pairing to %s.", __func__, address);
+      return;
     }
 
     // Skip SDP for certain  HID Devices

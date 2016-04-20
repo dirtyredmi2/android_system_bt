@@ -26,6 +26,8 @@
  *
  ***********************************************************************************/
 
+#define LOG_TAG "bt_btif"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,9 +57,10 @@
 #include "btsnoop.h"
 #include "btsnoop_mem.h"
 #include "bt_utils.h"
-#include "osi/include/osi.h"
+#include "device/include/interop.h"
 #include "osi/include/allocation_tracker.h"
 #include "osi/include/log.h"
+#include "osi/include/osi.h"
 #include "stack_manager.h"
 #include "btif_config.h"
 #include "l2cdefs.h"
@@ -549,11 +552,16 @@ static const bt_interface_t bluetoothInterface = {
     read_energy_info,
     dump,
     config_clear,
+<<<<<<< HEAD
 #if TEST_APP_INTERFACE == TRUE
     get_testapp_interface,
 #else
     NULL,
 #endif
+=======
+    interop_database_clear,
+    interop_database_add,
+>>>>>>> 0a016b2e4980c79a650d869f93189bb014f4d3c2
 };
 
 const bt_interface_t* bluetooth__get_bluetooth_interface ()

@@ -362,7 +362,7 @@ BOOLEAN l2c_is_cmd_rejected (UINT8 cmd_code, UINT8 id, tL2C_LCB *p_lcb)
 *******************************************************************************/
 BT_HDR *l2cu_build_header (tL2C_LCB *p_lcb, UINT16 len, UINT8 cmd, UINT8 id)
 {
-    BT_HDR  *p_buf = (BT_HDR *)GKI_getpoolbuf (L2CAP_CMD_POOL_ID);
+    BT_HDR  *p_buf = (BT_HDR *)GKI_getbuf(L2CAP_CMD_BUF_SIZE);
     UINT8   *p;
 
     if (!p_buf)
@@ -1097,18 +1097,12 @@ void l2cu_send_peer_echo_rsp (tL2C_LCB *p_lcb, UINT8 id, UINT8 *p_data, UINT16 d
     }
     else
         p_lcb->cur_echo_id = id;
-     /* Don't respond if we more than 10% of our buffers are used */
-    if (GKI_poolutilization (L2CAP_CMD_POOL_ID) > 10)
-    {
-        L2CAP_TRACE_WARNING ("L2CAP gki pool used up to more than 10%%, ignore echo response");
-        return;
-    }
 
     uint16_t acl_data_size = controller_get_interface()->get_acl_data_size_classic();
     uint16_t acl_packet_size = controller_get_interface()->get_acl_packet_size_classic();
     /* Don't return data if it does not fit in ACL and L2CAP MTU */
-    maxlen = (GKI_get_pool_bufsize(L2CAP_CMD_POOL_ID) > acl_packet_size) ?
-               acl_data_size : (UINT16)GKI_get_pool_bufsize(L2CAP_CMD_POOL_ID);
+    maxlen = (L2CAP_CMD_BUF_SIZE > acl_packet_size) ?
+               acl_data_size : (UINT16)L2CAP_CMD_BUF_SIZE;
     maxlen -= (UINT16)(BT_HDR_SIZE + HCI_DATA_PREAMBLE_SIZE + L2CAP_PKT_OVERHEAD +
                 L2CAP_CMD_OVERHEAD + L2CAP_ECHO_RSP_LEN);
 
@@ -1629,12 +1623,12 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
 
     p_ccb->ertm_info.preferred_mode  = L2CAP_FCR_BASIC_MODE;        /* Default mode for channel is basic mode */
     p_ccb->ertm_info.allowed_modes   = L2CAP_FCR_CHAN_OPT_BASIC;    /* Default mode for channel is basic mode */
-    p_ccb->ertm_info.fcr_rx_pool_id  = L2CAP_FCR_RX_POOL_ID;
-    p_ccb->ertm_info.fcr_tx_pool_id  = L2CAP_FCR_TX_POOL_ID;
-    p_ccb->ertm_info.user_rx_pool_id = HCI_ACL_POOL_ID;
-    p_ccb->ertm_info.user_tx_pool_id = HCI_ACL_POOL_ID;
+    p_ccb->ertm_info.fcr_rx_buf_size = L2CAP_FCR_RX_BUF_SIZE;
+    p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_FCR_TX_BUF_SIZE;
+    p_ccb->ertm_info.user_rx_buf_size = L2CAP_USER_RX_BUF_SIZE;
+    p_ccb->ertm_info.user_tx_buf_size = L2CAP_USER_TX_BUF_SIZE;
     p_ccb->max_rx_mtu                = L2CAP_MTU_SIZE;
-    p_ccb->tx_mps                    = GKI_get_pool_bufsize(HCI_ACL_POOL_ID) - 32;
+    p_ccb->tx_mps                    = L2CAP_FCR_TX_BUF_SIZE - 32;
 
     GKI_init_q (&p_ccb->xmit_hold_q);
 
@@ -2829,10 +2823,10 @@ BOOLEAN l2cu_initialize_fixed_ccb (tL2C_LCB *p_lcb, UINT16 fixed_cid, tL2CAP_FCR
         /* Set the FCR parameters. For now, we will use default pools */
         p_ccb->our_cfg.fcr = p_ccb->peer_cfg.fcr = *p_fcr;
 
-        p_ccb->ertm_info.fcr_rx_pool_id  = HCI_ACL_POOL_ID;
-        p_ccb->ertm_info.fcr_tx_pool_id  = HCI_ACL_POOL_ID;
-        p_ccb->ertm_info.user_rx_pool_id = HCI_ACL_POOL_ID;
-        p_ccb->ertm_info.user_tx_pool_id = HCI_ACL_POOL_ID;
+        p_ccb->ertm_info.fcr_rx_buf_size  = L2CAP_FCR_RX_BUF_SIZE;
+        p_ccb->ertm_info.fcr_tx_buf_size  = L2CAP_FCR_TX_BUF_SIZE;
+        p_ccb->ertm_info.user_rx_buf_size = L2CAP_USER_RX_BUF_SIZE;
+        p_ccb->ertm_info.user_tx_buf_size = L2CAP_USER_TX_BUF_SIZE;
 
         p_ccb->fcrb.max_held_acks = p_fcr->tx_win_sz / 3;
     }
@@ -3434,10 +3428,6 @@ static tL2C_CCB *l2cu_get_next_channel_in_rr(tL2C_LCB *p_lcb)
                     if ( GKI_queue_is_empty(&p_ccb->xmit_hold_q))
                         continue;
 
-                    /* If using the common pool, should be at least 10% free. */
-                    if ( (p_ccb->ertm_info.fcr_tx_pool_id == HCI_ACL_POOL_ID) && (GKI_poolutilization (HCI_ACL_POOL_ID) > 90) )
-                        continue;
-
                     /* If in eRTM mode, check for window closure */
                     if ( (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) && (l2c_fcr_is_flow_controlled (p_ccb)) )
                         continue;
@@ -3518,10 +3508,6 @@ static tL2C_CCB *l2cu_get_next_channel(tL2C_LCB *p_lcb)
             return p_ccb;
 
         if (p_ccb->xmit_hold_q.count == 0)
-            continue;
-
-        /* If using the common pool, should be at least 10% free. */
-        if ( (p_ccb->ertm_info.fcr_tx_pool_id == HCI_ACL_POOL_ID) && (GKI_poolutilization (HCI_ACL_POOL_ID) > 90) )
             continue;
 
         /* If in eRTM mode, check for window closure */
@@ -3692,10 +3678,6 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
             if (GKI_queue_is_empty(&p_ccb->fcrb.retrans_q))
             {
                 if (GKI_queue_is_empty(&p_ccb->xmit_hold_q))
-                    continue;
-
-                /* If using the common pool, should be at least 10% free. */
-                if ( (p_ccb->ertm_info.fcr_tx_pool_id == HCI_ACL_POOL_ID) && (GKI_poolutilization (HCI_ACL_POOL_ID) > 90) )
                     continue;
 
                 /* If in eRTM mode, check for window closure */

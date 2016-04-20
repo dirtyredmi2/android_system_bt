@@ -815,10 +815,10 @@ const tL2CAP_ERTM_INFO obex_l2c_etm_opt =
 {
         L2CAP_FCR_ERTM_MODE,            /* Mandatory for OBEX over l2cap */
         L2CAP_FCR_CHAN_OPT_ERTM,        /* Mandatory for OBEX over l2cap */
-        OBX_USER_RX_POOL_ID,
-        OBX_USER_TX_POOL_ID,
-        OBX_FCR_RX_POOL_ID,
-        OBX_FCR_TX_POOL_ID
+        OBX_USER_RX_BUF_SIZE,
+        OBX_USER_TX_BUF_SIZE,
+        OBX_FCR_RX_BUF_SIZE,
+        OBX_FCR_TX_BUF_SIZE
 };
 
 /**
@@ -1025,7 +1025,7 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id)
                          * typically written to the socket in a tight loop, hence we risk the ioctl
                          * will return the total amount of data in the buffer, which could be
                          * multiple 64kbyte chunks.
-                         * UPDATE: As bluedroid cannot handle 64kbyte buffers, the size is reduced
+                         * UPDATE: As the stack cannot handle 64kbyte buffers, the size is reduced
                          * to around 8kbyte - and using malloc for buffer allocation here seems to
                          * be wrong
                          * UPDATE: Since we are responsible for freeing the buffer in the

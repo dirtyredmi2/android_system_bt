@@ -66,10 +66,6 @@ typedef struct
 void    GKI_freebuf (void *);
 void   *GKI_getbuf (UINT16);
 UINT16  GKI_get_buf_size (void *);
-void   *GKI_getpoolbuf (UINT8);
-UINT16  GKI_poolcount (UINT8);
-UINT16  GKI_poolfreecount (UINT8);
-UINT16  GKI_poolutilization (UINT8);
 
 
 /* User buffer queue management
@@ -83,7 +79,6 @@ void    GKI_init_q (BUFFER_Q *);
 UINT16  GKI_queue_length(BUFFER_Q *);
 BOOLEAN GKI_queue_is_empty(BUFFER_Q *);
 void   *GKI_remove_from_queue (BUFFER_Q *, void *);
-UINT16  GKI_get_pool_bufsize (UINT8);
 
 /* Timer management
 */
